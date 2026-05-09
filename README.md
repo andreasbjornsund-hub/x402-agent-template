@@ -33,17 +33,23 @@ cd x402-<name>
 #    Replace the placeholder in pyproject.toml:
 #    - name = "x402-<name>"
 
-# 4. Register the Fly app and set the wallet secret
-flyctl launch --no-deploy --copy-config --name x402-<name>
-flyctl secrets set EVM_ADDRESS=0x2D8cFC122D13971EEf8cfB4CBC047F527eB76FAd
+# 4. Register the Fly app and set ALL FOUR required secrets.
+#    The default x402.org facilitator only supports Base SEPOLIA.
+#    Mainnet (where the real wallet is) requires the CDP facilitator,
+#    which needs an API key from https://portal.cdp.coinbase.com/projects.
+flyctl apps create x402-<name>
+flyctl secrets set -a x402-<name> \
+  EVM_ADDRESS=0x2D8cFC122D13971EEf8cfB4CBC047F527eB76FAd \
+  FACILITATOR_URL=https://api.cdp.coinbase.com/platform/v2/x402 \
+  CDP_API_KEY_NAME='<paste from CDP dashboard>' \
+  CDP_API_KEY_SECRET='<paste from CDP dashboard>'
 
-# 5. Add the FLY_API_TOKEN to GitHub secrets so deploy.yml can run
-#    Settings → Secrets and variables → Actions → New repository secret
-#    Name: FLY_API_TOKEN
-#    Value: $(flyctl auth token)
+# 5. Add a Fly deploy token to GitHub Actions secrets
+gh secret set FLY_API_TOKEN -R <you>/x402-<name> -b "$(flyctl tokens create deploy -x 8760h)"
 
-# 6. Push to main → Fly auto-deploys
+# 6. First deploy (triggers via push, or run locally)
 git push origin main
+# or: flyctl deploy --remote-only -a x402-<name>
 ```
 
 ## What to replace, in order
